@@ -20,7 +20,7 @@ export type Target = {
 export const ideIds = ["rustrover", "webstorm", "android-studio"] as const
 export type Ide = (typeof ideIds)[number]
 /** Rust services run a built binary in RustRover; Node and Bun services run a WebStorm configuration and Dart and Flutter services an Android Studio one, neither with a binary. */
-export type Service = Target & { ide: Ide; binary?: string; container: string; /** Env-file variable naming the device a Flutter configuration launches on. */ device?: string }
+export type Service = Target & { ide: Ide; binary?: string; container: string; /** Env-file variable naming the device a Flutter configuration launches on. */ device?: string; /** File the service's Dart VM writes its service URI to (--write-service-info), so debug reload can hot-reload it. */ vmService?: string }
 export type Frontend = Target & { browser: string; url: string; mounted: string }
 export type Kubernetes = { type: "kubernetes"; namespace: string; skip: string[]; manager?: { namespace: string; release: string } }
 /** A debugger-attach configuration for processes the services spawn themselves; `file` holds the inspect port the spawner reads. */
@@ -152,6 +152,7 @@ export function load(dir: string): Config {
         binary: ide === "rustrover" ? text(item.binary, `services.${id}.binary`) : undefined,
         container: routed ? text(item.container, `services.${id}.container`) : String(item.container ?? ""),
         device: item.device === undefined ? undefined : text(item.device, `services.${id}.device`),
+        vmService: item.vmService === undefined ? undefined : text(item.vmService, `services.${id}.vmService`),
       }]
     })),
     attach: Object.fromEntries(Object.entries(attach).map(([id, value]) => {

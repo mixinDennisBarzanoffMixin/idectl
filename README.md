@@ -20,6 +20,7 @@ Command-line control of JetBrains IDE debugging for agents and scripts: open pro
 - `frontend` (optional) and `services`: run configuration name, IDE project path, health path, port variable, workload and routing `mode`. Each service also names its `ide`: `rustrover` runs a built Rust `binary`; `webstorm` runs a Node or Bun run configuration (no `binary`), whose process idectl recognises by its working directory inside the project; `android-studio` runs a Dart or Flutter run configuration.
 - Omit `frontend` when there is no browser-hosted app (a mobile app, a server-only project); managed sessions (`debug up`) and browser checks then report that they need one. With the `none` adapter the routing fields (`workload`, `container`, `agent`, `mode`) may be omitted, and so may `health` and `port` for a process that serves nothing.
 - A Flutter service may set `device` to an env-file variable holding the device id its configuration launches on (`debug start NAME --device ID` overrides it). The Flutter plugin ignores a device named in the run configuration, so idectl selects it in the IDE first.
+- A Dart service may set `vmService` to the file its VM writes its service URI to (add `--write-service-info=FILE` to the run configuration's `VMOptions`). `debug reload` then hot-reloads that process while the debugger stays attached.
 
 ## Adapters
 

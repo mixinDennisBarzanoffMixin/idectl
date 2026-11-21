@@ -96,6 +96,7 @@ ${bin} close PATH | close --project PATH
 ${bin} route|unroute frontend|${names}
 ${bin} breakpoint set FILE LINE [--once] [--condition EXPRESSION] [JSON] | list | remove ID
 ${bin} debug browser|configs|sessions|status|wait|inspect|vars|stack|source|console|threads|frame [...]
+${bin} debug reload|restart   (apply edits on disk to running Flutter apps and Dart servers; debug sessions and breakpoints stay)
 ${bin} debug up|down ${names}
 ${bin} debug attach|detach ${Object.keys(cfg.attach).join("|")}   (processes a service spawns itself: write the inspect port file and attach WebStorm)
 ${bin} debug request SERVICE /PATH [--timeout SECONDS]
@@ -359,6 +360,18 @@ export async function main() {
     if (action === "browser") {
       print(await launchedBrowser(ide))
       return 0
+    }
+    if (action === "reload" || action === "restart") {
+      // Edits made on disk reach the running processes without ending their debug sessions: Flutter apps through the
+      // Flutter plugin, Dart servers (services with "vmService") through the VM's own reload. --service limits it to one.
+      const restart = action === "restart"
+      const picked = scope ? [find(scope)] : Object.values(cfg.services).filter((item) => item.ide === ide.id)
+      const servers = restart ? [] : picked.filter((item) => item.vmService)
+      const dart = await Promise.all(servers.map(async (item) => ({ service: item.configuration, ...(await debug.dartReload(path.resolve(root, item.vmService!))) })))
+      const flutter = !scope || !find(scope).vmService ? await debug.flutterReload(ide, restart) : undefined
+      const ok = dart.every((item) => item.ok) && (flutter === undefined || (object(flutter) && flutter.reloaded === true))
+      print({ ok, ...(dart.length ? { dart } : {}), ...(flutter === undefined ? {} : { flutter }) })
+      return ok ? 0 : 1
     }
     if (action === "cancel") {
       const name = args.join(" ").trim()

@@ -207,6 +207,53 @@ export function debuggerClient(opts: Options) {
     }
   }
 
+  /** Hot-reloads (or restarts) the project's running Flutter apps; the IDE re-reads files from disk first. */
+  async function flutterReload(ide: Endpoint, restart: boolean) {
+    const client = await native(ide)
+    try {
+      return content(await client.call("idectl_flutter_reload", { restart, projectPath: project || opened(ide) }, 120_000))
+    } finally {
+      await client.close()
+    }
+  }
+
+  /** Hot-reloads a Dart VM (a server the IDE debugs) through its VM service; the debugger stays attached. */
+  async function dartReload(file: string) {
+    const uri = fs.existsSync(file) ? (() => { try { return JSON.parse(fs.readFileSync(file, "utf8")).uri as unknown } catch { return undefined } })() : undefined
+    if (typeof uri !== "string") return { ok: false, error: `No Dart VM service URI in ${file}; is the service running under the debugger?` }
+    const socket = new WebSocket(`${uri.replace(/^http/, "ws")}ws`)
+    const waiting = new Map<number, (value: Json) => void>()
+    const count = { value: 0 }
+    const call = (method: string, params: Json = {}) => new Promise<Json>((resolve) => {
+      const id = ++count.value
+      waiting.set(id, resolve)
+      socket.send(JSON.stringify({ jsonrpc: "2.0", id, method, params }))
+    })
+    socket.onmessage = (event) => {
+      const message = JSON.parse(String(event.data))
+      const done = waiting.get(message.id)
+      if (done) { waiting.delete(message.id); done(message) }
+    }
+    try {
+      await new Promise<void>((resolve, reject) => {
+        socket.onopen = () => resolve()
+        socket.onerror = () => reject(new Error(`Cannot reach the Dart VM service at ${uri}`))
+      })
+      const vm = await call("getVM")
+      const isolates = object(vm.result) && Array.isArray(vm.result.isolates) ? vm.result.isolates.filter(object) : []
+      const reports = await Promise.all(isolates.map(async (isolate) => {
+        const reply = await call("reloadSources", { isolateId: String(isolate.id) })
+        const ok = object(reply.result) && reply.result.success === true
+        return { isolate: String(isolate.name), ok, ...(ok ? {} : { error: reply.error ?? reply.result }) }
+      }))
+      return { ok: reports.length > 0 && reports.every((item) => item.ok), isolates: reports }
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    } finally {
+      socket.close()
+    }
+  }
+
   /** Points the IDE's Flutter device selector at one device; the device list loads asynchronously after the project opens. */
   async function flutterDevice(ide: Endpoint, device: string) {
     const client = await native(ide)
@@ -266,5 +313,5 @@ export function debuggerClient(opts: Options) {
   }
 
 
-  return { launchedBrowser, browserProcesses, endpoints, endpoint, tool, filter, flutterDevice, configs, config, sessions, launch }
+  return { launchedBrowser, browserProcesses, endpoints, endpoint, tool, filter, flutterDevice, flutterReload, dartReload, configs, config, sessions, launch }
 }
