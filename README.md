@@ -85,12 +85,29 @@ Works with every JetBrains IDE: idectl detects the ones installed and drives the
 | Step and resume | `idectl debug resume --service app` |
 | Apply edits without losing the session | `idectl debug reload` |
 | Run several services in one session | server and mobile app together |
+| Debug inside your Kubernetes cluster | your local process receives the real traffic |
 
 ## Talk to it in plain words
 
 > "Put a breakpoint where the greeting is sent, tap Send in the app, and tell me what the name is on the server."
 
 The agent sets both breakpoints, triggers the tap, reads the values at each pause and resumes.
+
+## Debug against your cluster
+
+Running in Kubernetes? idectl uses [Telepresence](https://www.telepresence.io) to put the process you are debugging into the cluster's place. Your IDE breakpoint catches real requests, with the service's real environment, secrets and config.
+
+| Mode | What happens | Good for |
+|---|---|---|
+| Intercept | Traffic to the workload goes to your local process while the cluster's pods keep running | Web services and APIs |
+| Replace | The workload's container is stopped while you debug and restored when you finish | Queue workers and jobs |
+
+`idectl doctor` checks that Telepresence and the cluster are set up for this, and idectl cleans up after you: routes removed, workloads restored.
+
+| Adapter | Status |
+|---|---|
+| None (local only) | Supported |
+| Kubernetes with Telepresence | Supported |
 
 ## For agents and contributors
 
