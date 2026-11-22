@@ -41,12 +41,23 @@ You keep working in your own IDE. The agent drives the same debugger you would.
 
 **IDEs**
 
-| IDE | Languages | Status |
-|---|---|---|
-| RustRover | Rust | Supported |
-| WebStorm | JavaScript, TypeScript, Node, Bun | Supported |
-| Android Studio | Dart, Flutter | Supported, with hot reload and hot restart |
-| Other JetBrains IDEs (263 series) | | Planned |
+Works with every JetBrains IDE: idectl detects the ones installed and drives the debugger of each (breakpoints, stepping, variables, evaluate).
+
+| IDE | Languages | Project setup (`idectl.json`) | Tried here |
+|---|---|---|---|
+| IntelliJ IDEA | Java, Kotlin, Scala | Via `--ide` | |
+| PyCharm | Python | Via `--ide` | |
+| WebStorm | JavaScript, TypeScript, Node, Bun | Built in | Yes |
+| GoLand | Go | Via `--ide` | |
+| PhpStorm | PHP | Via `--ide` | |
+| RubyMine | Ruby | Via `--ide` | |
+| CLion | C, C++ | Via `--ide` | |
+| RustRover | Rust | Built in | Yes |
+| Rider | .NET | Via `--ide` | |
+| Android Studio | Dart, Flutter, Android | Built in | Yes, with hot reload and hot restart |
+| DataGrip, DataSpell, Aqua | SQL, data science, QA | Via `--ide` | |
+
+"Built in" means you can declare the IDE for a service in `idectl.json` and idectl starts and supervises it for you. "Via `--ide`" means you pick the IDE on the command, for example `idectl debug status --ide pycharm`.
 
 **Agents**
 
