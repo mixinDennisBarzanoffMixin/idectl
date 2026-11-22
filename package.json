@@ -6,7 +6,7 @@
   "bin": {
     "idectl": "./cli/src/cli.ts"
   },
-  "files": ["cli/src", "plugin", "README.md"],
+  "files": ["cli/src", "plugin", "README.md", "AGENTS.md", "assets"],
   "scripts": {
     "typecheck": "tsgo --noEmit -p .",
     "test": "bun test ./cli/test"
